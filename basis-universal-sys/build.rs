@@ -15,8 +15,9 @@ fn build_with_common_settings() -> cc::Build {
 }
 
 fn main() {
-    build_with_common_settings()
-        .cpp(true)
+    let mut cc = build_with_common_settings();
+
+    cc.cpp(true)
         .define("BASISD_SUPPORT_KTX2_ZSTD", "0")
         //.define("BASISU_SUPPORT_SSE", "1") TODO: expose this in a futher release
         .flag_if_supported("--std=c++11")
@@ -39,8 +40,14 @@ fn main() {
         .file("vendor/basis_universal/encoder/basisu_backend.cpp")
         .file("vendor/basis_universal/transcoder/basisu_transcoder.cpp")
         .file("vendor/transcoding_wrapper.cpp")
-        .file("vendor/encoding_wrapper.cpp")
-        .compile("basisuniversal");
+        .file("vendor/encoding_wrapper.cpp");
+
+    if cfg!(target_env = "msvc") {
+        cc.include("vendor/include-msvc");
+        println!("cargo::rerun-if-changed=vendor/include-msvc");
+    }
+
+    cc.compile("basisuniversal");
 
     // We regenerate binding code and check it in. (See generate_bindings.sh)
 }
